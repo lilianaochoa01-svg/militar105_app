@@ -237,6 +237,65 @@ if codigo_letra: # si se encontro un codigo de letra valido
         st.write(f"Tamaño de muestra: *{datos['n']}* unidades")# mostramos el tamaño de muestra
         st.write(f"Número de aceptación (Ac): *{datos['Ac']}*")# mostramos el numero de aceptacion
         st.write(f"Número de rechazo (Re): *{datos['Re']}*")   # mostramos el numero de rechazo
+    else:
+        st.warning("No hay datos disponibles para este AQL en la tabla seleccionada.") # si no se encontraron datos para el AQL seleccionado
+else:
+    st.error("El tamaño de lote no está dentro del rango de la tabla.") # si no se encontro un codigo de letra valido
+    
+
+        # --- NUEVA SECCIÓN: Evaluación de la muestra con mediciones ---
+st.subheader("📌 Evaluación del lote con datos reales de la muestra")
+
+st.markdown("Ingrese los valores medidos en la muestra y los límites de especificación para evaluar automáticamente los defectos.")
+
+# --- LÍMITES SUPERIOR E INFERIOR ---
+LSL = st.number_input("Ingrese el Límite Inferior de Especificación (LSL):", value=0.0, format="%.4f")
+USL = st.number_input("Ingrese el Límite Superior de Especificación (USL):", value=1.0, format="%.4f")
+
+# --- ENTRADA DE MUESTRA COMPLETA ---
+st.write(f"Ingrese **{datos['n']} valores** correspondientes a la muestra:")
+
+muestra_input = st.text_area(
+    "Escriba los valores separados por comas (Ejemplo: 3.1, 2.9, 3.0, 3.2 ...)",
+    ""
+)
+
+if muestra_input:
+    try:
+        # Convertir texto a lista de números
+        muestra = [float(x.strip()) for x in muestra_input.split(",")]
+
+        if len(muestra) != datos["n"]:
+            st.error(f"Debe ingresar exactamente **{datos['n']} valores**.")
+        else:
+            # Contar defectos fuera de los límites
+            defectos_fuera = sum((x < LSL or x > USL) for x in muestra)
+
+            st.write(f"🔎 Número de unidades fuera de especificación: **{defectos_fuera}**")
+
+            # --- Evaluación según Ac y Re ---
+            if defectos_fuera <= datos["Ac"]:
+                st.success("✔️ EL LOTE SE ACEPTA")
+                st.write(
+                    f"Con base en los valores medidos, solo se encontraron {defectos_fuera} defectos, "
+                    f"lo cual está dentro del límite permitido (Ac = {datos['Ac']})."
+                )
+
+            elif defectos_fuera >= datos["Re"]:
+                st.error("❌ EL LOTE SE RECHAZA")
+                st.write(
+                    f"El lote excede los límites permitidos por el plan de muestreo. "
+                    f"Los {defectos_fuera} defectos superan el valor permitido (Re = {datos['Re']})."
+                )
+            else:
+                st.warning(
+                    "⚠️ La cantidad de defectos se encuentra entre Ac y Re. "
+                    "Según la MIL-STD-105E, se requiere una decisión adicional o reinspección."
+                )
+
+    except:
+        st.error("Formato incorrecto. Asegúrese de ingresar solo números separados por comas.")
+
             # --- Evaluación de la muestra ingresada por el usuario ---
         st.subheader("📌 Evaluación del lote según los defectos encontrados")
 
@@ -268,10 +327,6 @@ if codigo_letra: # si se encontro un codigo de letra valido
             "Se requiere aplicar resolución específica del estándar o repetir la muestra."
             )
 
-    else:
-        st.warning("No hay datos disponibles para este AQL en la tabla seleccionada.") # si no se encontraron datos para el AQL seleccionado
-else:
-    st.error("El tamaño de lote no está dentro del rango de la tabla.") # si no se encontro un codigo de letra valido
     
 
 
@@ -311,5 +366,8 @@ if datos:
     ax.title.set_color("#f57c00")
     # Mostrar en la app
     st.pyplot(fig)
+
+
+
 
 
